@@ -162,6 +162,12 @@ class TmuxSession:
         )
 
         if attach:
+            cmd2 = (
+                """echo %s_start_$$_; %s; echo %s_end_$?_; """
+                """while true; do tmux capture-pane -p -S -100 | grep -q '%s_end_'; [ $? -eq 0 ] && break; sleep 0.1; done; """
+                """sleep 0.1; tmux wait-for -S %s; tmux detach-client"""
+                % (sentinel, cmd, sentinel, sentinel, sentinel)
+            )
             cmd = (
                 """echo %s_start_$$_; %s; echo %s_end_$?_; tmux wait-for -S %s; tmux detach-client"""
                 % (sentinel, cmd, sentinel, sentinel)

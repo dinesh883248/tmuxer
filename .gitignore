@@ -16,3 +16,4 @@ shmw
 build/
 ttest.py
 dist/
+*.pem
