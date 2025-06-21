@@ -122,7 +122,17 @@ class TmuxSession:
         return proc.stdout
 
     def _tmux_extract_output(self, sentinel: str) -> tuple[int, str]:
-        shm = shared_memory.SharedMemory(name=sentinel, create=False)
+        retries = 10
+        while True:
+            try:
+                shm = shared_memory.SharedMemory(name=sentinel, create=False)
+                break
+            except FileNotFoundError as e:
+                retries -= 1
+                if retries == 0:
+                    raise e
+            time.sleep(0.1)
+
         output = shm.buf.tobytes().decode("utf-8").rstrip("\x00")
         shm.close()
         shm.unlink()
@@ -173,13 +183,9 @@ class TmuxSession:
             subprocess.run("tmux wait-for %s" % sentinel, shell=True, check=True)
 
         # Stop pipe-pane
-        # NOTE: Always stop pipe-pane before extracting output
         subprocess.run(f"tmux pipe-pane -t {pt}", shell=True)
 
         # Extract output from the shared memory
-        # NOTE: Make sure pipe-pane is stopped before extracting output
-        # otherwise we get filenotfounderror, this happens on initial exection
-        # with fresh install.
         rc, output = self._tmux_extract_output(sentinel)
 
         # Kill the window
