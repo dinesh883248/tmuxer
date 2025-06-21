@@ -1,0 +1,17 @@
+.env
+*.swo
+*.swp
+__pycache__/
+venv/
+.venv/
+tmp/
+trash/
+ec2_spot_price.csv
+simulator.pem
+config.json
+*.egg-info/
+kingfisher.pem
+msgs.json
+shmw
+build/
+ttest.py
