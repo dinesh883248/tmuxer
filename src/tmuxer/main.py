@@ -34,7 +34,7 @@ class TmuxSession:
         self.session: str = self.get_uid()
         self._ensure_tmux_session()
 
-        self.shmw_path = str(importlib.resources.files("tmux").joinpath("shmw"))
+        self.shmw_path = str(importlib.resources.files("tmuxer").joinpath("shmw"))
         if not os.path.exists(self.shmw_path):
             raise FileNotFoundError
 
@@ -185,4 +185,4 @@ class TmuxSession:
         # Kill the window
         self._tmux_kill_window(wt)
 
-        return rc, output
+        return int(rc), output

@@ -1,2 +1,2 @@
-include src/tmux/shmw.c
-include src/tmux/shmw
+include src/tmuxer/shmw.c
+include src/tmuxer/shmw
