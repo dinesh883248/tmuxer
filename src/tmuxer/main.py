@@ -7,6 +7,7 @@ from multiprocessing import shared_memory
 import subprocess
 import importlib.resources
 import os
+import time
 
 
 class TmuxSession:
