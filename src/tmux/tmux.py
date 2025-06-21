@@ -1,4 +1,3 @@
-import shutil
 import random
 import string
 import re
@@ -6,6 +5,8 @@ import shlex
 import atexit
 from multiprocessing import shared_memory
 import subprocess
+import importlib.resources
+import os
 
 
 class TmuxSession:
@@ -32,7 +33,11 @@ class TmuxSession:
         self.max_capture_lines: int = max_capture_lines
         self.session: str = self.get_uid()
         self._ensure_tmux_session()
-        self.shmw_path = shutil.which("shmw")
+
+        self.shmw_path = str(importlib.resources.files("tmux").joinpath("shmw"))
+        if not os.path.exists(self.shmw_path):
+            raise FileNotFoundError
+
         atexit.register(self.close)
 
     # ------------------------------------------------------------------
@@ -151,7 +156,8 @@ class TmuxSession:
                 % (sentinel, cmd, sentinel, sentinel)
             )
             cmd = shlex.quote(cmd)
-            subprocess.run(f"tmux send-keys -t {pt} {cmd} C-m", shell=True)
+            # NOTE: do not use fstring here.
+            subprocess.run("tmux send-keys -t %s %s C-m" % (pt, cmd), shell=True)
             subprocess.run(f"tmux attach -t {pt}", shell=True)
         else:
             cmd = """echo %s_start_$$_; %s; echo %s_end_$?_; tmux wait-for -S %s""" % (
@@ -161,16 +167,20 @@ class TmuxSession:
                 sentinel,
             )
             cmd = shlex.quote(cmd)
-            subprocess.run("tmux send-keys -t %s '%s' C-m" % (pt, cmd), shell=True)
-
+            # NOTE: do not use fstring here.
+            subprocess.run("tmux send-keys -t %s %s C-m" % (pt, cmd), shell=True)
             # Wait for the cmd to finish
-            subprocess.run("tmux wait-for -L %s" % sentinel, shell=True, check=True)
-
-        # Extract output from the shared memory
-        rc, output = self._tmux_extract_output(sentinel)
+            subprocess.run("tmux wait-for %s" % sentinel, shell=True, check=True)
 
         # Stop pipe-pane
+        # NOTE: Always stop pipe-pane before extracting output
         subprocess.run(f"tmux pipe-pane -t {pt}", shell=True)
+
+        # Extract output from the shared memory
+        # NOTE: Make sure pipe-pane is stopped before extracting output
+        # otherwise we get filenotfounderror, this happens on initial exection
+        # with fresh install.
+        rc, output = self._tmux_extract_output(sentinel)
 
         # Kill the window
         self._tmux_kill_window(wt)
